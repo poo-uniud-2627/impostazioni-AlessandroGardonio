@@ -5,6 +5,7 @@ package pong;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -28,7 +29,12 @@ public record Impostazioni(int puntiPerVincere, int scartoMinimo, int velocitaPa
      * dice quale valore è sbagliato e perché.
      */
     public Impostazioni {
-        // scrivete qui
+        if(!(puntiPerVincere >=1 && puntiPerVincere <= 99))
+           throw new IllegalArgumentException ("Il valore 'puntiPerVincere' non è valido: il suo valore deve rientrare nel'intervallo [1,99] (estremi compresi)");
+        if(!(scartoMinimo >=1 && scartoMinimo <=10))
+            throw new IllegalArgumentException ("Il valore 'scartoMinimo' non è valido: il suo valore deve rientrare nel'intervallo [1,10] (estremi compresi)");
+        if(!(velocitaPalla >=1 && velocitaPalla <=20))
+            throw new IllegalArgumentException ("Il valore 'velocitaPalla' non è valido: il suo valore deve rientrare nel'intervallo [1,20] (estremi compresi)");
     }
 
     /**
@@ -51,7 +57,57 @@ public record Impostazioni(int puntiPerVincere, int scartoMinimo, int velocitaPa
      * Se ci sono errori in più righe, il messaggio è quello della riga più in alto.
      */
     public static Impostazioni leggi(List<String> righe) {
-        return STANDARD; // scrivete qui
+        int puntiPerVincere = STANDARD.puntiPerVincere;
+        int scartoMinimo = STANDARD.scartoMinimo;
+        int velocitaPalla = STANDARD.velocitaPalla;
+        int numRiga = 0;
+        List<String> listaChiavi = new ArrayList<>();
+
+        for (String riga : righe) {
+            numRiga++;
+            riga = riga.trim();
+
+            if (riga.isEmpty() || riga.startsWith("#"))
+                continue;
+
+            if (riga.indexOf("=") == -1)
+                throw new IllegalArgumentException("riga " + numRiga + ": manca il segno =");
+
+            String chiave = riga.substring(0, riga.indexOf("=")).trim();
+            if (!chiave.equals("puntiPerVincere") && !chiave.equals("scartoMinimo") && !chiave.equals("velocitaPalla"))
+                throw new IllegalArgumentException("riga " + numRiga + ": la chiave non è una delle tre");
+
+            int valore;
+            try {
+                valore = Integer.parseInt(riga.substring(riga.indexOf("=") + 1).trim());
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("riga " + numRiga + ": il valore non è un numero intero");
+            }
+
+            if (listaChiavi.contains(chiave))
+                throw new IllegalArgumentException("riga " + numRiga + ": la stessa chiave c'era già in una riga precedente");
+            
+            listaChiavi.add(chiave);
+
+            switch (chiave) {
+                case "puntiPerVincere":
+                    puntiPerVincere = valore;
+                    break;
+                case "scartoMinimo":
+                    scartoMinimo = valore;
+                    break;
+                default: // velocitaPalla
+                    velocitaPalla = valore;
+            }
+
+            try {
+                new Impostazioni(puntiPerVincere, scartoMinimo, velocitaPalla);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("riga " + numRiga + ": il valore è fuori dal suo intervallo");
+            }
+        }
+
+        return new Impostazioni(puntiPerVincere, scartoMinimo, velocitaPalla);
     }
 
     /**
